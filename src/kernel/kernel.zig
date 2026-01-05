@@ -14,6 +14,7 @@ pub const Kernel = struct {
 
     pub const EventTag = enum(u8) {
         Boundary,
+        Annotation,
     };
 
     pub const StepError = error{
@@ -47,6 +48,30 @@ pub const Kernel = struct {
 
         self.event_bytes[old_len + 0] = @intFromEnum(EventTag.Boundary); // tag
         self.event_bytes[old_len + 1] = 0; // payload length
+    }
+
+    // payloads
+    pub fn annotate(
+        self: *Kernel,
+        payload: []const u8,
+    ) StepError!void {
+        if (payload.len > 255) return error.OutOfMemory; // bounded format
+
+        const old_len = self.event_bytes.len;
+        const new_len = old_len + 2 + payload.len;
+
+        self.event_bytes =
+            self.allocator.realloc(self.event_bytes, new_len) catch return error.OutOfMemory;
+
+        self.event_bytes[old_len + 0] =
+            @intFromEnum(EventTag.Annotation);
+        self.event_bytes[old_len + 1] =
+            @intCast(payload.len);
+
+        @memcpy(
+            self.event_bytes[old_len + 2 .. new_len],
+            payload,
+        );
     }
 
     pub fn events(self: *const Kernel) EventLog {

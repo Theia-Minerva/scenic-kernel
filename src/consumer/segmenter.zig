@@ -34,6 +34,7 @@ pub const Segmenter = struct {
     /// Valid for i in 0..segmentCount().
     pub fn segmentAt(self: *const Segmenter, i: usize) Segment {
         const n = self.index.count();
+        const boundary_size: usize = 2;
 
         if (i == 0) {
             // Before first boundary
@@ -46,14 +47,14 @@ pub const Segmenter = struct {
         if (i < n) {
             // Between boundaries
             return .{
-                .start = self.index.at(i - 1),
+                .start = self.index.at(i - 1) + boundary_size,
                 .end = self.index.at(i),
             };
         }
 
         // After last boundary
         return .{
-            .start = self.index.at(n - 1),
+            .start = self.index.at(n - 1) + boundary_size,
             .end = self.log_len,
         };
     }

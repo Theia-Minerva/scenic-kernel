@@ -11,23 +11,23 @@ test "StepCursor consumes one Step per kernel.step()" {
     var cursor = BoundaryCursor.init();
 
     // No events yet
-    try std.testing.expect(!cursor.advance(kernel.events()));
+    try std.testing.expect(cursor.advance(kernel.events()) == null);
 
     // Emit one step
     try kernel.step(1.0);
 
     // Cursor should advance exactly once
-    try std.testing.expect(cursor.advance(kernel.events()));
-    try std.testing.expect(!cursor.advance(kernel.events()));
+    try std.testing.expect(cursor.advance(kernel.events()) != null);
+    try std.testing.expect(cursor.advance(kernel.events()) == null);
 
     // Emit two more steps
     try kernel.step(1.0);
     try kernel.step(1.0);
 
     // Cursor should advance twice
-    try std.testing.expect(cursor.advance(kernel.events()));
-    try std.testing.expect(cursor.advance(kernel.events()));
-    try std.testing.expect(!cursor.advance(kernel.events()));
+    try std.testing.expect(cursor.advance(kernel.events()) != null);
+    try std.testing.expect(cursor.advance(kernel.events()) != null);
+    try std.testing.expect(cursor.advance(kernel.events()) == null);
 }
 
 test "BoundaryCursor skips unknown events" {
@@ -52,7 +52,9 @@ test "BoundaryCursor skips unknown events" {
     var cursor = BoundaryCursor.init();
     var count: usize = 0;
 
-    while (cursor.advance(kernel.events())) {
+    while (true) {
+        const off = cursor.advance(kernel.events());
+        if (off == null) break;
         count += 1;
     }
 

@@ -1,14 +1,15 @@
 // boundary_cursor.zig
 //
-// A minimal consumer of scenic-kernel's event log.
-// Treats each EventTag.Boundary as a single advancement boundary.
+// A minimal structural cursor over scenic-kernel's event log.
+// Locates and consumes Boundary events while skipping all others.
 //
 
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
 
 pub const BoundaryCursor = struct {
-    /// Byte offset into the event log
+    /// Current byte offset into the event log.
+    /// Always points to the start of the next event to examine.
     offset: usize,
 
     pub fn init() BoundaryCursor {
@@ -17,56 +18,45 @@ pub const BoundaryCursor = struct {
         };
     }
 
-    /// Advance the cursor by exactly one Boundary event, if available.
+    /// Advance the cursor to the next Boundary event, if any.
     ///
     /// Returns:
-    /// - true  if a Boundary event was consumed
-    /// - false if no further Boundary events are available
-    ///   or the log is malformed
+    /// - `usize` — the byte offset at which the Boundary event begins
+    /// - `null`  — if no further Boundary events are available
+    ///             or the log is malformed
+    ///
+    /// On success, the cursor advances past the entire Boundary event
+    /// ([tag][len][payload]).
     ///
     /// This function:
     /// - does not allocate
     /// - does not mutate the kernel
-    /// - does not interpret payloads
+    /// - does not interpret payload contents
+    /// - skips non-Boundary events transparently
     ///
     pub fn advance(
         self: *BoundaryCursor,
         log: Kernel.EventLog,
-    ) bool {
+    ) ?usize {
         const bytes = log.bytes;
 
         while (true) {
-            // No more data
-            if (self.offset >= bytes.len) {
-                return false;
+            if (self.offset >= bytes.len) return null;
+            if (self.offset + 2 > bytes.len) return null;
+
+            const start = self.offset;
+            const tag = bytes[start];
+            const len = bytes[start + 1];
+            const next = start + 2 + len;
+            if (next > bytes.len) return null;
+
+            if (tag == @intFromEnum(Kernel.EventTag.Boundary)) {
+                self.offset = next;
+                return start; // byte offset where Boundary begins
             }
 
-            // Need at least [tag][len]
-            if (self.offset + 2 > bytes.len) {
-                // Malformed log
-                return false;
-            }
-
-            const tag_byte: u8 = bytes[self.offset];
-            const payload_len: usize = bytes[self.offset + 1];
-
-            const next_offset = self.offset + 2 + payload_len;
-
-            // Payload must not run past buffer
-            if (next_offset > bytes.len) {
-                // Malformed log
-                return false;
-            }
-
-            // Advance cursor past this event
-            self.offset = next_offset;
-
-            // Compare numerically; do NOT enumFromInt unknown values
-            if (tag_byte == @intFromEnum(Kernel.EventTag.Boundary)) {
-                return true;
-            }
-
-            // Otherwise: skip and continue
+            // Skip non-boundary event
+            self.offset = next;
         }
     }
 };

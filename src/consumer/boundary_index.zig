@@ -34,11 +34,8 @@ pub const BoundaryIndex = struct {
         var cursor = BoundaryCursor.init();
 
         while (true) {
-            const before = cursor.offset;
-            if (!cursor.advance(log)) break;
-
-            // `before` is the offset where the Boundary event started.
-            try self.offsets.append(self.allocator, before);
+            const boundary_start = cursor.advance(log) orelse break;
+            try self.offsets.append(self.allocator, boundary_start);
         }
     }
 

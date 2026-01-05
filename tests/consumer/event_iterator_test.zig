@@ -29,17 +29,15 @@ test "EventIterator walks events inside a segment" {
     try index.build(kernel.events());
 
     var seg = Segmenter.init(&index, kernel.events());
+
+    // Segment AFTER the boundary
     const s1 = seg.segmentAt(1);
 
     var it = EventIterator.init(kernel.events(), s1);
 
     const e0 = it.next().?;
-    try std.testing.expect(e0.tag == @intFromEnum(Kernel.EventTag.Boundary));
-    try std.testing.expect(e0.payload.len == 0);
-
-    const e1 = it.next().?;
-    try std.testing.expect(e1.tag == 7);
-    try std.testing.expectEqualSlices(u8, &[_]u8{ 1, 2 }, e1.payload);
+    try std.testing.expect(e0.tag == 7);
+    try std.testing.expectEqualSlices(u8, &[_]u8{ 1, 2 }, e0.payload);
 
     try std.testing.expect(it.next() == null);
 }

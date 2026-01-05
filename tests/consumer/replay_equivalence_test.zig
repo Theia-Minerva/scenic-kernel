@@ -21,7 +21,7 @@ test "replay equivalence: boundary-derived state is deterministic" {
     var cursor1 = BoundaryCursor.init();
     var counter1 = BoundaryCounter.init();
 
-    while (cursor1.advance(log)) {
+    while (cursor1.advance(log)) |_| {
         counter1.applyBoundary();
     }
 
@@ -29,7 +29,7 @@ test "replay equivalence: boundary-derived state is deterministic" {
     var cursor2 = BoundaryCursor.init();
     var counter2 = BoundaryCounter.init();
 
-    while (cursor2.advance(log)) {
+    while (cursor2.advance(log)) |_| {
         counter2.applyBoundary();
     }
 

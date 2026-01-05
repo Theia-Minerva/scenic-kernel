@@ -26,15 +26,19 @@ test "Segmenter derives correct segments from BoundaryIndex" {
     const s2 = seg.segmentAt(2);
     const s3 = seg.segmentAt(3);
 
+    // Segment 0: before first boundary
     try std.testing.expect(s0.start == 0);
     try std.testing.expect(s0.end == index.at(0));
 
-    try std.testing.expect(s1.start == index.at(0));
+    // Segment 1: between B0 and B1 (excluding boundaries)
+    try std.testing.expect(s1.start == index.at(0) + 2);
     try std.testing.expect(s1.end == index.at(1));
 
-    try std.testing.expect(s2.start == index.at(1));
+    // Segment 2: between B1 and B2
+    try std.testing.expect(s2.start == index.at(1) + 2);
     try std.testing.expect(s2.end == index.at(2));
 
-    try std.testing.expect(s3.start == index.at(2));
+    // Segment 3: after last boundary
+    try std.testing.expect(s3.start == index.at(2) + 2);
     try std.testing.expect(s3.end == kernel.events().bytes.len);
 }
