@@ -15,6 +15,13 @@ pub const Kernel = struct {
     pub const EventTag = enum(u8) {
         Boundary,
         Annotation,
+        Checkpoint,
+    };
+
+    pub const Checkpoint = struct {
+        /// Monotonic, kernel-assigned identifier.
+        /// Increments strictly by emission order.
+        id: u64,
     };
 
     pub const StepError = error{
@@ -72,6 +79,19 @@ pub const Kernel = struct {
             self.event_bytes[old_len + 2 .. new_len],
             payload,
         );
+    }
+
+    pub fn checkpoint(self: *Kernel) StepError!void {
+        // Event format: [tag:u8][len:u8][payload...], with len in 0..255.
+        // Checkpoint is an empty structural marker.
+        const old_len = self.event_bytes.len;
+        const new_len = old_len + 2;
+
+        self.event_bytes =
+            self.allocator.realloc(self.event_bytes, new_len) catch return error.OutOfMemory;
+
+        self.event_bytes[old_len + 0] = @intFromEnum(EventTag.Checkpoint); // tag
+        self.event_bytes[old_len + 1] = 0; // payload length
     }
 
     pub fn events(self: *const Kernel) EventLog {

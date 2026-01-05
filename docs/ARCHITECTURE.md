@@ -10,7 +10,7 @@ All claims here reflect behavior enforced by code and tests.
 scenic-kernel is designed to:
 
 - record facts, not interpretations
-- remain replayable and deterministic
+- remain deterministic under re-consumption
 - support forward-compatible evolution
 - separate structure from meaning
 - allow multiple independent consumers
@@ -47,14 +47,14 @@ All state is derived externally by consumers.
 Structure is derived from the event log by consumers that do not
 interpret event semantics.
 
-### BoundaryCursor
-Identifies structural advancement points by scanning the event log.
+### DelimiterCursor
+Identifies structural delimiter offsets by scanning the event log.
 
-### BoundaryIndex
-Indexes advancement boundaries deterministically.
+### DelimiterIndex
+Indexes delimiter offsets deterministically.
 
 ### Segmenter
-Partitions the log into contiguous byte-range segments.
+Partitions the log into contiguous byte-range segments between delimiters.
 
 ### EventIterator
 Provides safe, local iteration within a segment.
@@ -72,14 +72,14 @@ Consumers may:
 
 The kernel and structural consumers remain unchanged as meaning evolves.
 
-## Replay and Determinism
+## Determinism
 
 Given the same event log:
-- boundary detection is deterministic
+- delimiter detection is deterministic
 - segmentation is deterministic
 - consumer-derived state is deterministic
 
-Replay is achieved by re-consuming history, not by snapshotting state.
+Re-consumption is achieved by consumers that read history, not by kernel replay.
 
 ## Evolution Strategy
 

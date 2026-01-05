@@ -1,41 +1,41 @@
-// boundary_cursor.zig
+// delimiter_cursor.zig
 //
 // A minimal structural cursor over scenic-kernel's event log.
-// Locates and consumes Boundary events while skipping all others.
+// Locates and consumes delimiter events (Boundary or Checkpoint) while skipping all others.
 //
 
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
 
-pub const BoundaryCursor = struct {
+pub const DelimiterCursor = struct {
     /// Current byte offset into the event log.
     /// Always points to the start of the next event to examine.
     offset: usize,
 
-    pub fn init() BoundaryCursor {
+    pub fn init() DelimiterCursor {
         return .{
             .offset = 0,
         };
     }
 
-    /// Advance the cursor to the next Boundary event, if any.
+    /// Advance the cursor to the next delimiter event, if any.
     ///
     /// Returns:
-    /// - `usize` — the byte offset at which the Boundary event begins
-    /// - `null`  — if no further Boundary events are available
+    /// - `usize` — the byte offset at which the delimiter event begins
+    /// - `null`  — if no further delimiter events are available
     ///             or the log is malformed
     ///
-    /// On success, the cursor advances past the entire Boundary event
+    /// On success, the cursor advances past the entire delimiter event
     /// ([tag][len][payload]).
     ///
     /// This function:
     /// - does not allocate
     /// - does not mutate the kernel
     /// - does not interpret payload contents
-    /// - skips non-Boundary events transparently
+    /// - skips non-delimiter events transparently
     ///
     pub fn advance(
-        self: *BoundaryCursor,
+        self: *DelimiterCursor,
         log: Kernel.EventLog,
     ) ?usize {
         const bytes = log.bytes;
@@ -50,12 +50,14 @@ pub const BoundaryCursor = struct {
             const next = start + 2 + len;
             if (next > bytes.len) return null;
 
-            if (tag == @intFromEnum(Kernel.EventTag.Boundary)) {
+            if (tag == @intFromEnum(Kernel.EventTag.Boundary) or
+                tag == @intFromEnum(Kernel.EventTag.Checkpoint))
+            {
                 self.offset = next;
-                return start; // byte offset where Boundary begins
+                return start; // byte offset where delimiter begins
             }
 
-            // Skip non-boundary event
+            // Skip non-delimiter event
             self.offset = next;
         }
     }

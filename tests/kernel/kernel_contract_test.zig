@@ -1,5 +1,7 @@
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
+const Segmenter = @import("consumer").Segmenter;
+const DelimiterIndex = @import("consumer").DelimiterIndex;
 
 // KC-01: Kernel Construction Has No Side Effects
 test "KC-01: A newly created kernel has an observable, empty event log and has not advanced time or state" {
@@ -100,4 +102,29 @@ test "KC-04: event log is composed of atomic, self-delimiting events" {
 
     // Must end exactly on an event boundary
     try std.testing.expect(i == log.len);
+}
+
+test "KC-06: checkpoints act as structural delimiters, not segment members" {
+    const allocator = std.testing.allocator;
+    var kernel = Kernel.init(allocator);
+    defer kernel.deinit();
+
+    try kernel.step(1.0);
+    try kernel.checkpoint();
+    try kernel.step(1.0);
+    try kernel.checkpoint();
+    try kernel.step(1.0);
+
+    const log = kernel.events();
+
+    var index = DelimiterIndex.init(allocator);
+    defer index.deinit();
+    try index.build(log);
+
+    var segmenter = Segmenter.init(&index, log);
+
+    try std.testing.expectEqual(
+        index.count() + 1,
+        segmenter.segmentCount(),
+    );
 }

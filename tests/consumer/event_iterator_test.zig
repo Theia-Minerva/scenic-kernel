@@ -1,6 +1,6 @@
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
-const BoundaryIndex = @import("consumer").BoundaryIndex;
+const DelimiterIndex = @import("consumer").DelimiterIndex;
 const Segmenter = @import("consumer").Segmenter;
 const EventIterator = @import("consumer").EventIterator;
 
@@ -10,7 +10,7 @@ test "EventIterator walks events inside a segment" {
     var kernel = Kernel.init(allocator);
     defer kernel.deinit();
 
-    // Boundary
+    // Delimiter
     try kernel.step(1.0);
 
     // Inject a non-boundary event: tag=7, len=2, payload=[1,2]
@@ -24,7 +24,7 @@ test "EventIterator walks events inside a segment" {
         kernel.event_bytes[old_len + 3] = 2;
     }
 
-    var index = BoundaryIndex.init(allocator);
+    var index = DelimiterIndex.init(allocator);
     defer index.deinit();
     try index.build(kernel.events());
 

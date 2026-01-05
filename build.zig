@@ -173,7 +173,7 @@ pub fn build(b: *std.Build) void {
         "tests/kernel",
         target,
         optimize,
-        &.{kernel},
+        &.{ kernel, consumer },
     );
     const log_tests = addTestGroup(
         b,

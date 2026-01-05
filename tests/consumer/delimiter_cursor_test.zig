@@ -1,14 +1,14 @@
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
-const BoundaryCursor = @import("consumer").BoundaryCursor;
+const DelimiterCursor = @import("consumer").DelimiterCursor;
 
-test "StepCursor consumes one Step per kernel.step()" {
+test "DelimiterCursor consumes one Step per kernel.step()" {
     const allocator = std.testing.allocator;
 
     var kernel = Kernel.init(allocator);
     defer kernel.deinit();
 
-    var cursor = BoundaryCursor.init();
+    var cursor = DelimiterCursor.init();
 
     // No events yet
     try std.testing.expect(cursor.advance(kernel.events()) == null);
@@ -30,13 +30,13 @@ test "StepCursor consumes one Step per kernel.step()" {
     try std.testing.expect(cursor.advance(kernel.events()) == null);
 }
 
-test "BoundaryCursor skips unknown events" {
+test "DelimiterCursor skips unknown events" {
     const allocator = std.testing.allocator;
 
     var kernel = Kernel.init(allocator);
     defer kernel.deinit();
 
-    // Emit boundary
+    // Emit delimiter
     try kernel.step(1.0);
 
     // Manually append a fake unknown event: tag=255, len=0
@@ -46,10 +46,10 @@ test "BoundaryCursor skips unknown events" {
     kernel.event_bytes[old_len + 0] = 255;
     kernel.event_bytes[old_len + 1] = 0;
 
-    // Emit another boundary
+    // Emit another delimiter
     try kernel.step(1.0);
 
-    var cursor = BoundaryCursor.init();
+    var cursor = DelimiterCursor.init();
     var count: usize = 0;
 
     while (true) {

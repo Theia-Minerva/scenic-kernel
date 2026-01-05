@@ -1,11 +1,11 @@
 // segmenter.zig
 //
-// Derives byte-range segments from a BoundaryIndex.
+// Derives byte-range segments from a DelimiterIndex.
 // Purely structural: no semantics, no payload parsing.
 //
 
 const Kernel = @import("kernel").Kernel;
-const BoundaryIndex = @import("consumer").BoundaryIndex;
+const DelimiterIndex = @import("consumer").DelimiterIndex;
 
 pub const Segment = struct {
     start: usize,
@@ -13,10 +13,10 @@ pub const Segment = struct {
 };
 
 pub const Segmenter = struct {
-    index: *const BoundaryIndex,
+    index: *const DelimiterIndex,
     log_len: usize,
 
-    pub fn init(index: *const BoundaryIndex, log: Kernel.EventLog) Segmenter {
+    pub fn init(index: *const DelimiterIndex, log: Kernel.EventLog) Segmenter {
         return .{
             .index = index,
             .log_len = log.bytes.len,
@@ -26,7 +26,7 @@ pub const Segmenter = struct {
     /// Total number of segments including the initial (pre-first-boundary) segment
     /// and the trailing (post-last-boundary) segment.
     pub fn segmentCount(self: *const Segmenter) usize {
-        // segments = boundaries + 1
+        // segments = delimiters + 1
         return self.index.count() + 1;
     }
 
@@ -34,10 +34,10 @@ pub const Segmenter = struct {
     /// Valid for i in 0..segmentCount().
     pub fn segmentAt(self: *const Segmenter, i: usize) Segment {
         const n = self.index.count();
-        const boundary_size: usize = 2;
+        const delimiter_size: usize = 2;
 
         if (i == 0) {
-            // Before first boundary
+            // Before first delimiter
             return .{
                 .start = 0,
                 .end = if (n > 0) self.index.at(0) else self.log_len,
@@ -45,16 +45,16 @@ pub const Segmenter = struct {
         }
 
         if (i < n) {
-            // Between boundaries
+            // Between delimiters
             return .{
-                .start = self.index.at(i - 1) + boundary_size,
+                .start = self.index.at(i - 1) + delimiter_size,
                 .end = self.index.at(i),
             };
         }
 
-        // After last boundary
+        // After last delimiter
         return .{
-            .start = self.index.at(n - 1) + boundary_size,
+            .start = self.index.at(n - 1) + delimiter_size,
             .end = self.log_len,
         };
     }

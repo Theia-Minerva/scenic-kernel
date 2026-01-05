@@ -75,7 +75,7 @@ without interpreting the event’s semantic meaning.
 
 This contract guarantees that the event log can be safely:
 - traversed sequentially,
-- skipped or replayed,
+- skipped,
 - and evolved in format over time,
 
 without requiring knowledge of event semantics.
@@ -107,6 +107,30 @@ higher-level layers.
 
 This clause documents a **format constraint**.
 It becomes enforceable only once payload-bearing events exist.
+
+## KC-06: Structural Delimiters and Segmentation
+
+Certain events in the kernel event log act as **structural delimiters**.  
+Delimiter events mark structural cut points in the byte stream but carry no semantic meaning within the kernel.
+
+The following event tags are delimiters:
+- `Boundary` — an implicit delimiter emitted by `step()`
+- `Checkpoint` — an explicit delimiter emitted via `checkpoint()`
+
+Segmentation is a **purely structural projection** derived from delimiter offsets:
+
+- Segments are byte-range gaps between consecutive delimiter offsets.
+- Delimiter bytes are excluded from segments by construction.
+- Segment count is equal to `delimiter_count + 1`.
+- Empty segments are valid and represent structural adjacency between delimiters.
+- Segmentation does not imply the presence of non-delimiter events.
+
+The kernel does not interpret delimiter meaning or assign provenance.
+Any re-consumption, interpretation, or higher-level reasoning about delimiters is the responsibility of consumers outside the kernel.
+
+
+**Enforced by tests:**
+- [`tests/kernel/kernel_contract_test.zig` — KC-06](../../tests/kernel/kernel_contract_test.zig)
 
 ---
 

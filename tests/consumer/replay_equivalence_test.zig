@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const Kernel = @import("kernel").Kernel;
-const BoundaryCursor = @import("consumer").BoundaryCursor;
+const DelimiterCursor = @import("consumer").DelimiterCursor;
 const BoundaryCounter = @import("consumer").BoundaryCounter;
 
 test "replay equivalence: boundary-derived state is deterministic" {
@@ -18,7 +18,7 @@ test "replay equivalence: boundary-derived state is deterministic" {
     const log = kernel.events();
 
     // --- First consumption ---
-    var cursor1 = BoundaryCursor.init();
+    var cursor1 = DelimiterCursor.init();
     var counter1 = BoundaryCounter.init();
 
     while (cursor1.advance(log)) |_| {
@@ -26,7 +26,7 @@ test "replay equivalence: boundary-derived state is deterministic" {
     }
 
     // --- Replay consumption ---
-    var cursor2 = BoundaryCursor.init();
+    var cursor2 = DelimiterCursor.init();
     var counter2 = BoundaryCounter.init();
 
     while (cursor2.advance(log)) |_| {

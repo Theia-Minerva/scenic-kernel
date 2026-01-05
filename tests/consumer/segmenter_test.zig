@@ -1,19 +1,19 @@
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
-const BoundaryIndex = @import("consumer").BoundaryIndex;
+const DelimiterIndex = @import("consumer").DelimiterIndex;
 const Segmenter = @import("consumer").Segmenter;
 
-test "Segmenter derives correct segments from BoundaryIndex" {
+test "Segmenter derives correct segments from DelimiterIndex" {
     const allocator = std.testing.allocator;
 
     var kernel = Kernel.init(allocator);
     defer kernel.deinit();
 
-    try kernel.step(1.0); // B0
-    try kernel.step(1.0); // B1
-    try kernel.step(1.0); // B2
+    try kernel.step(1.0); // D0
+    try kernel.step(1.0); // D1
+    try kernel.step(1.0); // D2
 
-    var index = BoundaryIndex.init(allocator);
+    var index = DelimiterIndex.init(allocator);
     defer index.deinit();
     try index.build(kernel.events());
 
@@ -26,19 +26,19 @@ test "Segmenter derives correct segments from BoundaryIndex" {
     const s2 = seg.segmentAt(2);
     const s3 = seg.segmentAt(3);
 
-    // Segment 0: before first boundary
+    // Segment 0: before first delimiter
     try std.testing.expect(s0.start == 0);
     try std.testing.expect(s0.end == index.at(0));
 
-    // Segment 1: between B0 and B1 (excluding boundaries)
+    // Segment 1: between D0 and D1 (excluding delimiters)
     try std.testing.expect(s1.start == index.at(0) + 2);
     try std.testing.expect(s1.end == index.at(1));
 
-    // Segment 2: between B1 and B2
+    // Segment 2: between D1 and D2
     try std.testing.expect(s2.start == index.at(1) + 2);
     try std.testing.expect(s2.end == index.at(2));
 
-    // Segment 3: after last boundary
+    // Segment 3: after last delimiter
     try std.testing.expect(s3.start == index.at(2) + 2);
     try std.testing.expect(s3.end == kernel.events().bytes.len);
 }

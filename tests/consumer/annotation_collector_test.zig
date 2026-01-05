@@ -1,6 +1,6 @@
 const std = @import("std");
 const Kernel = @import("kernel").Kernel;
-const BoundaryIndex = @import("consumer").BoundaryIndex;
+const DelimiterIndex = @import("consumer").DelimiterIndex;
 const Segmenter = @import("consumer").Segmenter;
 const EventIterator = @import("consumer").EventIterator;
 const AnnotationCollector = @import("consumer").AnnotationCollector;
@@ -22,12 +22,12 @@ test "Annotation events are preserved and replayable within a segment" {
     //     .{ kernel.events().bytes.len, kernel.events().bytes },
     // );
 
-    var index = BoundaryIndex.init(allocator);
+    var index = DelimiterIndex.init(allocator);
     defer index.deinit();
     try index.build(kernel.events());
 
     // std.debug.print(
-    //     "BoundaryIndex offsets (count={}): {any}\n",
+    //     "DelimiterIndex offsets (count={}): {any}\n",
     //     .{ index.count(), index.offsets.items },
     // );
 
