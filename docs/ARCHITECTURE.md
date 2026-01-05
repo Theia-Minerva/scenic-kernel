@@ -81,6 +81,18 @@ Given the same event log:
 
 Re-consumption is achieved by consumers that read history, not by kernel replay.
 
+## Consumer-Side Replay
+
+Consumer utilities may re-emit the event stream by iterating the byte log and
+writing each event verbatim. This is a structural operation that preserves
+byte-for-byte identity and does not interpret payloads or tags.
+
+## Byte Slice Lifetime
+
+Structural readers expose slices into the original event byte buffer.
+Callers must keep the source buffer alive and unchanged for the duration of
+iteration or replay.
+
 ## Evolution Strategy
 
 The architecture supports evolution by:
