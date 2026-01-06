@@ -1,0 +1,4 @@
+module scenic_kernel [system] {
+  header "sk.h"
+  export *
+}

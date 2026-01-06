@@ -36,6 +36,7 @@ fn addModuleGroup(
     }) |entry| {
         if (entry.kind != .file) continue;
         if (!std.mem.endsWith(u8, entry.name, ".zig")) continue;
+        if (std.mem.eql(u8, dir_path, "src/kernel") and std.mem.eql(u8, entry.name, "c_abi.zig")) continue;
         file_names.append(b.dupe(entry.name)) catch @panic("OOM");
     }
 
@@ -166,6 +167,15 @@ pub fn build(b: *std.Build) void {
     const consumer = addModuleGroup(b, "consumer", "src/consumer", target, optimize);
 
     addGroupDependency(consumer, "kernel", kernel.group);
+
+    const c_abi = b.addStaticLibrary(.{
+        .name = "scenic_kernel",
+        .root_source_file = b.path("src/kernel/c_abi.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    c_abi.root_module.addImport("kernel", kernel.group);
+    b.installArtifact(c_abi);
 
     const kernel_tests = addTestGroup(
         b,
