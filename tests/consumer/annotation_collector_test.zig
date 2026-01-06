@@ -5,10 +5,12 @@ const Segmenter = @import("consumer").Segmenter;
 const EventIterator = @import("consumer").EventIterator;
 const AnnotationCollector = @import("consumer").AnnotationCollector;
 
+const kernel_capacity: usize = 1024;
+
 test "Annotation events are preserved and replayable within a segment" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);

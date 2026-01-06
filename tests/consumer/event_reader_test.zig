@@ -2,10 +2,12 @@ const std = @import("std");
 const Kernel = @import("kernel").Kernel;
 const consumer = @import("consumer");
 
+const kernel_capacity: usize = 1024;
+
 test "EventReader yields exact event and payload slices" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);
@@ -45,7 +47,7 @@ test "EventReader rejects truncated input" {
 test "EventReader errors after buffer mutation mid-iteration" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);
@@ -69,7 +71,7 @@ test "EventReader errors after buffer mutation mid-iteration" {
 test "EventReader errors on truncated slice view mid-stream" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);

@@ -3,10 +3,12 @@ const Kernel = @import("kernel").Kernel;
 const DelimiterIndex = @import("consumer").DelimiterIndex;
 const Segmenter = @import("consumer").Segmenter;
 
+const kernel_capacity: usize = 1024;
+
 test "Segmenter derives correct segments from DelimiterIndex" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0); // D0

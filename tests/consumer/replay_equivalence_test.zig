@@ -4,11 +4,13 @@ const Kernel = @import("kernel").Kernel;
 const DelimiterCursor = @import("consumer").DelimiterCursor;
 const BoundaryCounter = @import("consumer").BoundaryCounter;
 
+const kernel_capacity: usize = 1024;
+
 test "replay equivalence: boundary-derived state is deterministic" {
     const allocator = std.testing.allocator;
 
     // --- Live run: produce history ---
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);

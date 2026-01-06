@@ -6,7 +6,8 @@ const std = @import("std");
 
 pub const Kernel = struct {
     allocator: std.mem.Allocator,
-    event_bytes: []u8,
+    buffer: []u8,
+    len: usize,
 
     pub const EventLog = struct {
         bytes: []u8,
@@ -26,20 +27,24 @@ pub const Kernel = struct {
 
     pub const StepError = error{
         InvalidDt,
-        OutOfMemory,
+        PayloadTooLarge,
+        CapacityExceeded,
     };
 
     pub fn init(
         allocator: std.mem.Allocator,
-    ) Kernel {
+        max_bytes: usize,
+    ) error{OutOfMemory}!Kernel {
+        const buffer = try allocator.alloc(u8, max_bytes);
         return .{
             .allocator = allocator,
-            .event_bytes = &[_]u8{},
+            .buffer = buffer,
+            .len = 0,
         };
     }
 
     pub fn deinit(self: *Kernel) void {
-        self.allocator.free(self.event_bytes);
+        self.allocator.free(self.buffer);
     }
 
     pub fn step(self: *Kernel, dt: f32) StepError!void {
@@ -47,14 +52,14 @@ pub const Kernel = struct {
 
         // Event format: [tag:u8][len:u8][payload...], with len in 0..255 (KC-04, KC-05).
         // space for [tag::u8][len=0]
-        const old_len = self.event_bytes.len;
+        const old_len = self.len;
         const new_len = old_len + 2;
 
-        self.event_bytes =
-            self.allocator.realloc(self.event_bytes, new_len) catch return error.OutOfMemory;
+        if (new_len > self.buffer.len) return error.CapacityExceeded;
 
-        self.event_bytes[old_len + 0] = @intFromEnum(EventTag.Boundary); // tag
-        self.event_bytes[old_len + 1] = 0; // payload length
+        self.buffer[old_len + 0] = @intFromEnum(EventTag.Boundary); // tag
+        self.buffer[old_len + 1] = 0; // payload length
+        self.len = new_len;
     }
 
     // payloads
@@ -62,41 +67,41 @@ pub const Kernel = struct {
         self: *Kernel,
         payload: []const u8,
     ) StepError!void {
-        if (payload.len > 255) return error.OutOfMemory; // bounded format
+        if (payload.len > 255) return error.PayloadTooLarge; // bounded format
 
-        const old_len = self.event_bytes.len;
+        const old_len = self.len;
         const new_len = old_len + 2 + payload.len;
 
-        self.event_bytes =
-            self.allocator.realloc(self.event_bytes, new_len) catch return error.OutOfMemory;
+        if (new_len > self.buffer.len) return error.CapacityExceeded;
 
-        self.event_bytes[old_len + 0] =
+        self.buffer[old_len + 0] =
             @intFromEnum(EventTag.Annotation);
-        self.event_bytes[old_len + 1] =
+        self.buffer[old_len + 1] =
             @intCast(payload.len);
 
         @memcpy(
-            self.event_bytes[old_len + 2 .. new_len],
+            self.buffer[old_len + 2 .. new_len],
             payload,
         );
+        self.len = new_len;
     }
 
     pub fn checkpoint(self: *Kernel) StepError!void {
         // Event format: [tag:u8][len:u8][payload...], with len in 0..255.
         // Checkpoint is an empty structural marker.
-        const old_len = self.event_bytes.len;
+        const old_len = self.len;
         const new_len = old_len + 2;
 
-        self.event_bytes =
-            self.allocator.realloc(self.event_bytes, new_len) catch return error.OutOfMemory;
+        if (new_len > self.buffer.len) return error.CapacityExceeded;
 
-        self.event_bytes[old_len + 0] = @intFromEnum(EventTag.Checkpoint); // tag
-        self.event_bytes[old_len + 1] = 0; // payload length
+        self.buffer[old_len + 0] = @intFromEnum(EventTag.Checkpoint); // tag
+        self.buffer[old_len + 1] = 0; // payload length
+        self.len = new_len;
     }
 
     pub fn events(self: *const Kernel) EventLog {
         return .{
-            .bytes = self.event_bytes,
+            .bytes = self.buffer[0..self.len],
         };
     }
 };

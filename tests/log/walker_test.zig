@@ -2,9 +2,11 @@ const std = @import("std");
 const Walker = @import("walker");
 const Kernel = @import("kernel").Kernel;
 
+const kernel_capacity: usize = 1024;
+
 test "log walker can traverse kernel event log" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);

@@ -3,10 +3,13 @@ const Kernel = @import("kernel").Kernel;
 const Segmenter = @import("consumer").Segmenter;
 const DelimiterIndex = @import("consumer").DelimiterIndex;
 
+const kernel_capacity: usize = 1024;
+
 // KC-01: Kernel Construction Has No Side Effects
 test "KC-01: A newly created kernel has an observable, empty event log and has not advanced time or state" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
+    defer kernel.deinit();
 
     const events = kernel.events();
     try std.testing.expect(events.bytes.len == 0);
@@ -15,7 +18,8 @@ test "KC-01: A newly created kernel has an observable, empty event log and has n
 // KC-02: Explicit Time Advancement
 test "KC-02: kernel advances only via explicit positive step" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
+    defer kernel.deinit();
 
     const before = kernel.events();
 
@@ -34,7 +38,7 @@ test "KC-02: kernel advances only via explicit positive step" {
 // KC-03: Append-Only Event Log
 test "KC-03: successful steps do not rewrite existing event history" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     const before = kernel.events();
@@ -54,7 +58,7 @@ test "KC-03: successful steps do not rewrite existing event history" {
 
 test "KC-03: successful step appends to event log" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     const before = kernel.events();
@@ -74,7 +78,7 @@ test "KC-03: successful step appends to event log" {
 // KC-04: Atomic, Self-Delimiting Events
 test "KC-04: event log is composed of atomic, self-delimiting events" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     // Cause some observable activity
@@ -106,7 +110,7 @@ test "KC-04: event log is composed of atomic, self-delimiting events" {
 
 test "KC-06: checkpoints act as structural delimiters, not segment members" {
     const allocator = std.testing.allocator;
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);

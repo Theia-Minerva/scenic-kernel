@@ -2,10 +2,12 @@ const std = @import("std");
 const Kernel = @import("kernel").Kernel;
 const consumer = @import("consumer");
 
+const kernel_capacity: usize = 64 * 1024;
+
 test "replayAlloc round-trips bytes" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);
@@ -24,7 +26,7 @@ test "replayAlloc round-trips bytes" {
 test "replayTo round-trips bytes" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     try kernel.step(1.0);
@@ -53,7 +55,7 @@ test "replayAlloc rejects truncated input" {
 test "replayAlloc scales with many events" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     var i: usize = 0;

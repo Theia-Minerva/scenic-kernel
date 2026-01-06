@@ -4,10 +4,12 @@ const DelimiterIndex = @import("consumer").DelimiterIndex;
 const Segmenter = @import("consumer").Segmenter;
 const EventIterator = @import("consumer").EventIterator;
 
+const kernel_capacity: usize = 1024;
+
 test "EventIterator walks events inside a segment" {
     const allocator = std.testing.allocator;
 
-    var kernel = Kernel.init(allocator);
+    var kernel = try Kernel.init(allocator, kernel_capacity);
     defer kernel.deinit();
 
     // Delimiter
@@ -15,13 +17,13 @@ test "EventIterator walks events inside a segment" {
 
     // Inject a non-boundary event: tag=7, len=2, payload=[1,2]
     {
-        const old_len = kernel.event_bytes.len;
-        kernel.event_bytes =
-            try allocator.realloc(kernel.event_bytes, old_len + 4);
-        kernel.event_bytes[old_len + 0] = 7;
-        kernel.event_bytes[old_len + 1] = 2;
-        kernel.event_bytes[old_len + 2] = 1;
-        kernel.event_bytes[old_len + 3] = 2;
+        const old_len = kernel.len;
+        try std.testing.expect(old_len + 4 <= kernel.buffer.len);
+        kernel.buffer[old_len + 0] = 7;
+        kernel.buffer[old_len + 1] = 2;
+        kernel.buffer[old_len + 2] = 1;
+        kernel.buffer[old_len + 3] = 2;
+        kernel.len = old_len + 4;
     }
 
     var index = DelimiterIndex.init(allocator);
